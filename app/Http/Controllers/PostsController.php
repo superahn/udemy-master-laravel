@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StorePost;
 use App\Models\BlogPost;
 use Illuminate\Http\Request;
 
@@ -24,7 +25,7 @@ class PostsController extends Controller
      */
     public function create()
     {
-        //
+        return view('posts.create');
     }
 
     /**
@@ -33,9 +34,22 @@ class PostsController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(StorePost $request)
     {
-        //
+        $validated = $request->validated();
+        $post = BlogPost::create($validated);   // See $fillable in BlogPost model
+
+        /*
+        // You don't need fillable in case of using save()
+        $post = new BlogPost();
+        $post->title = $validated['title'];
+        $post->content = $validated['content'];
+        $post->save();
+        */
+
+        $request->session()->flash('status', 'The blog post was created.');
+
+        return redirect()->route('posts.show', ['post' => $post->id]);
     }
 
     /**
@@ -57,7 +71,7 @@ class PostsController extends Controller
      */
     public function edit($id)
     {
-        //
+        return view('posts.edit', ['post' => BlogPost::findOrFail($id)]);
     }
 
     /**
@@ -67,9 +81,17 @@ class PostsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(StorePost $request, $id)
     {
-        //
+        $post = BlogPost::findOrFail($id);
+
+        $validated = $request->validated();
+        $post->fill($validated);
+        $post->save();
+        
+        $request->session()->flash('status', 'The blog post was updated.');
+
+        return redirect()->route('posts.show', ['post' => $post->id]);
     }
 
     /**
@@ -80,6 +102,12 @@ class PostsController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $post = BlogPost::findOrFail($id);
+
+        $post->delete();
+
+        session()->flash('status', 'The blog post was deleted.');   // helper sessoin
+
+        return redirect()->route('posts.index');
     }
 }
